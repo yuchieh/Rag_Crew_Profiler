@@ -1,25 +1,25 @@
-# === 敏感資料 ===
+# === Sensitive Data ===
 .env
 
-# === Python 快取 ===
+# === Python Cache ===
 __pycache__/
 *.pyc
 *.pyo
 
-# === 虛擬環境 ===
+# === Virtual Environment ===
 .venv/
 
-# === macOS 系統檔 ===
+# === macOS System Files ===
 .DS_Store
 
-# === 大型資料檔案 ===
+# === Large Data Files ===
 data/*.json
 data/*.jsonl
 chroma_index.tar.gz
 
-# === CrewAI 輸出 ===
+# === CrewAI Output ===
 report.json
 report.md
 
-# === 日誌 ===
+# === Logs ===
 *.log

@@ -22,7 +22,7 @@ rag_config = {
 def benchmark_single_tool(name: str, json_path: str, run_id: int):
     print(f"\n=== Benchmarking {name} Database ===")
     
-    # 1. 測量初始化 (此為 CrewAI 真正消耗 CPU 進行切塊與 ChromaDB 寫入的所在)
+    # 1. Measure initialization (this is where CrewAI spends heavy CPU on chunking & ChromaDB writes)
     print(f"[{name}] Starting Tool Initialization & Fresh Indexing (HEAVY CPU computation)...")
     init_start = time.time()
     
@@ -35,7 +35,7 @@ def benchmark_single_tool(name: str, json_path: str, run_id: int):
     init_end = time.time()
     print(f"[{name}] Initialization & Indexing Time: {init_end - init_start:.2f} seconds")
     
-    # 2. 測量暖機完成後的檢索速度 (純粹查 ChromaDB)
+    # 2. Measure retrieval speed after warm-up (pure ChromaDB query)
     print(f"[{name}] Starting RAG Retrieval test...")
     retrieval_start = time.time()
     
@@ -47,7 +47,7 @@ def benchmark_single_tool(name: str, json_path: str, run_id: int):
         print(f"Error during {name} retrieval: {e}")
 
 def run_indexing_benchmark():
-    # 使用當下的時間戳作為 run_id，確保底層 ChromaDB 無法抓到任何舊的集合快照
+    # Use current timestamp as run_id to ensure ChromaDB cannot match any existing collection snapshots
     run_id = int(time.time())
     print("=== Starting True Vector Indexing Latency Benchmark ===")
     print("We are now measuring the exact time spent ON INITIALIZING the JSONSearchTool.\n")

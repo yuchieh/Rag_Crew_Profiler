@@ -6,12 +6,12 @@ load_dotenv()
 llm_provider = os.getenv("LLM_PROVIDER", "ollama").lower()
 
 if llm_provider == "nvidia":
-    # 透過 LiteLLM 的 openai 相容性介接 Nvidia API
+    # Route through LiteLLM's OpenAI-compatible interface to Nvidia API
     os.environ["MODEL"] = f"openai/{os.getenv('NVIDIA_MODEL_NAME', 'meta/llama-3.1-8b-instruct')}"
     os.environ["OPENAI_API_BASE"] = os.getenv("NVIDIA_API_BASE", "https://integrate.api.nvidia.com/v1")
     os.environ["OPENAI_API_KEY"] = os.getenv("NVIDIA_API_KEY", "")
 else:
-    # 預設為本地端 Ollama Phi3
+    # Default to local Ollama Phi3
     os.environ["MODEL"] = "ollama/phi3"
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
@@ -23,7 +23,7 @@ import os
 
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
-# 繞過 CrewAI-Tools 早期版本強制檢查 OpenAI Key 的 Pydantic Bug
+# Workaround for early CrewAI-Tools versions that enforce OpenAI Key validation via Pydantic
 os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "NA")
 
 # Embedding Model for converting text to numerical representations
@@ -40,7 +40,7 @@ rag_config = {
     }
 }
 
-# === Step 3: 配置主動檢索武器 (CrewAI RAG Tools) ===
+# === Step 3: Configure RAG Tools (CrewAI RAG Tools) ===
 def create_rag_tool(json_path: str, collection_name: str, config: dict, name: str, description: str) -> JSONSearchTool:
     from crewai.utilities.paths import db_storage_path
     from crewai_tools.tools.json_search_tool.json_search_tool import FixedJSONSearchToolSchema
@@ -114,7 +114,7 @@ review_rag_tool = create_rag_tool(
     )
 )
 
-# === Step 2: 注入全局背景知識 (CrewAI Knowledge) ===
+# === Step 2: Inject Global Background Knowledge (CrewAI Knowledge) ===
 with open('docs/Yelp Data Translation.md', 'r', encoding='utf-8') as f:
     schema_content = f.read()
 
@@ -129,8 +129,8 @@ class FirstCrew():
     agents: List[BaseAgent]
     tasks: List[Task]
 
-    # === Step 6: 系統組裝與工具綁定 ===
-    # 為特定 Agent 掛載特定 RAG Tools
+    # === Step 6: System Assembly & Tool Binding ===
+    # Mount specific RAG Tools onto specific Agents
     @agent
     def user_analyst(self) -> Agent:
         return Agent(
@@ -179,7 +179,7 @@ class FirstCrew():
             agents=self.agents,  # Automatically created by the @agent decorator
             tasks=self.tasks,  # Automatically created by the @task decorator
             process=Process.sequential,
-            knowledge_sources=[schema_knowledge],  # 綁定全局 Knowledge
+            knowledge_sources=[schema_knowledge],  # Bind global Knowledge
             embedder={
                 "provider": "huggingface",
                 "config": {

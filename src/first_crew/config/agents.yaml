@@ -1,4 +1,4 @@
-# === Step 4: 嚴格分離的 Agent 定義 ===
+# === Step 4: Strictly Separated Agent Definitions ===
 
 user_analyst:
   role: >

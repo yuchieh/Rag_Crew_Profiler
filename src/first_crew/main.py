@@ -36,8 +36,8 @@ def run():
     """
     Run the crew using the first testing sample.
     """
-    # === Step 1: 了解目標與資料集 ===
-    # 讀取測試集的第一筆資料作為 Demo
+    # === Step 1: Understand the Target & Dataset ===
+    # Read the first entry from the test set as a demo
     test_json_path = "data/test_review_subset.json"
     with open(test_json_path, 'r', encoding='utf-8') as f:
         first_line = f.readline()
@@ -50,7 +50,7 @@ def run():
 
     print(f"Starting Prediction for User: {inputs['user_id']} | Item: {inputs['item_id']}")
 
-    # === Step 7: 測試執行腳本 ===
+    # === Step 7: Execute the Prediction ===
     try:
         result = FirstCrew().crew().kickoff(inputs=inputs)
         
