@@ -1,54 +1,160 @@
-# FirstCrew Crew
+# 🔍 Rag Crew Profiler
 
-Welcome to the FirstCrew Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+A **CrewAI multi-agent system** that predicts Yelp review ratings and generates review text using RAG (Retrieval-Augmented Generation) over real Yelp datasets.
 
-## Installation
+Built for the [AgentSociety Challenge](https://www.agentsocietychallenge.com/) — Track 1: Recommendation.
 
-Ensure you have Python >=3.10 <3.14 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling, offering a seamless setup and execution experience.
+---
 
-First, if you haven't already, install uv:
+## ✨ Key Features
 
-```bash
-pip install uv
+- **3-Agent Pipeline**: User Profiler → Restaurant Analyst → Review Prediction Expert
+- **Smart Index Caching**: Detects existing ChromaDB collections via `sqlite3` to bypass CPU-intensive re-indexing (hours → < 1 second)
+- **Local Embeddings**: Uses `BAAI/bge-small-en-v1.5` (384-dim) — runs entirely on CPU, no GPU required
+- **Free LLM Endpoint**: Configured for `minimaxai/minimax-m2.7` via Nvidia Build API (free tier)
+- **YAML-First Architecture**: Agent roles, goals, and task descriptions are fully separated from Python code
+
+---
+
+## 🏗️ Architecture
+
+```
+main.py                         ← Entry point: reads test data, launches Crew, writes report.json
+  └── crew.py                   ← Core orchestration: Agent/Task/Tool bindings
+        ├── create_rag_tool()   ← Smart cache detector (sqlite3 check → instant load or full index)
+        ├── config/agents.yaml  ← Agent roles, goals, and backstories
+        └── config/tasks.yaml   ← Task descriptions and expected output formats
 ```
 
-Next, navigate to your project directory and install the dependencies:
+### Agents
 
-(Optional) Lock the dependencies and install them by using the CLI command:
+| Agent | Role | Tools |
+|-------|------|-------|
+| **User Profiler** | Analyze user's review history and preferences | `search_user_profile_data`, `search_historical_reviews_data` |
+| **Restaurant Analyst** | Analyze business features and reputation | `search_restaurant_feature_data`, `search_historical_reviews_data` |
+| **Prediction Expert** | Synthesize profiles to predict stars & review text | *(uses context from previous agents)* |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.12+
+- [Astral `uv`](https://docs.astral.sh/uv/)
+- [Nvidia Build API Key](https://build.nvidia.com/) (free)
+
+### 1. Clone & Install
+
 ```bash
-crewai install
+git clone https://github.com/yuchieh/Rag_Crew_Profiler.git
+cd Rag_Crew_Profiler
+uv sync
 ```
-### Customizing
 
-**Add your `OPENAI_API_KEY` into the `.env` file**
+> ⚠️ This project uses `uv` exclusively. Do **not** use `pip install`.
 
-- Modify `src/first_crew/config/agents.yaml` to define your agents
-- Modify `src/first_crew/config/tasks.yaml` to define your tasks
-- Modify `src/first_crew/crew.py` to add your own logic, tools and specific args
-- Modify `src/first_crew/main.py` to add custom inputs for your agents and tasks
+### 2. Configure Environment
 
-## Running the Project
+Create a `.env` file in the project root:
 
-To kickstart your crew of AI agents and begin task execution, run this from the root folder of your project:
+```dotenv
+LLM_PROVIDER=nvidia
+NVIDIA_API_KEY=nvapi-your-key-here
+NVIDIA_MODEL_NAME=minimaxai/minimax-m2.7
+NVIDIA_API_BASE=https://integrate.api.nvidia.com/v1
+```
+
+### 3. Set Up Vector Index
+
+**Option A — Use pre-built index** (recommended, < 1 min):
+
+Download `chroma_index.tar.gz` from the provided Google Drive link and extract:
 
 ```bash
-$ crewai run
+# macOS
+mkdir -p ~/Library/Application\ Support/Rag_Crew_Profiler/
+tar -xzf chroma_index.tar.gz -C ~/Library/Application\ Support/Rag_Crew_Profiler/
+
+# Linux
+mkdir -p ~/.local/share/Rag_Crew_Profiler/
+tar -xzf chroma_index.tar.gz -C ~/.local/share/Rag_Crew_Profiler/
 ```
 
-This command initializes the first_crew Crew, assembling the agents and assigning them tasks as defined in your configuration.
+**Option B — Build from scratch** (1–4 hours on CPU):
 
-This example, unmodified, will run the create a `report.md` file with the output of a research on LLMs in the root folder.
+```bash
+uv run python src/first_crew/benchmark_indexing.py
+```
 
-## Understanding Your Crew
+### 4. Run
 
-The first_crew Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
+```bash
+uv run first_crew
+```
 
-## Support
+Results are written to `report.json`:
 
-For support, questions, or feedback regarding the FirstCrew Crew or crewAI.
-- Visit our [documentation](https://docs.crewai.com)
-- Reach out to us through our [GitHub repository](https://github.com/joaomdmoura/crewai)
-- [Join our Discord](https://discord.com/invite/X4JWnZnxPb)
-- [Chat with our docs](https://chatg.pt/DWjSBZn)
+```json
+{
+  "stars": 4.0,
+  "review": "Predicted review text..."
+}
+```
 
-Let's create wonders together with the power and simplicity of crewAI.
+---
+
+## 📁 Project Structure
+
+```
+Rag_Crew_Profiler/
+├── src/first_crew/
+│   ├── main.py                  # Entry point
+│   ├── crew.py                  # Agent/Task/Tool orchestration + smart caching
+│   ├── benchmark_indexing.py    # Full index build script
+│   ├── benchmark_rag.py         # Retrieval speed benchmark
+│   ├── config/
+│   │   ├── agents.yaml          # Agent definitions
+│   │   └── tasks.yaml           # Task definitions
+│   └── tools/
+│       └── custom_tool.py       # Custom tool definitions
+├── data/                        # Yelp dataset (gitignored)
+├── docs/
+│   ├── RAG_Index_Student_Guide.md       # Student guide (中文)
+│   ├── RAG_Index_Student_Guide_EN.md    # Student guide (English)
+│   ├── Embedding_Index_Lessons_Learned.md  # Lessons learned (English)
+│   └── Embedding_Index_踩坑總結.md        # Lessons learned (中文)
+├── pyproject.toml
+├── uv.lock
+└── .env                         # API keys (gitignored)
+```
+
+---
+
+## 📊 Performance
+
+| Metric | Value |
+|--------|-------|
+| Full indexing time (CPU) | 1–4 hours |
+| Cached retrieval time | < 0.3 sec / query |
+| ChromaDB index size | ~4.6 GB |
+| Embedding model | `BAAI/bge-small-en-v1.5` (384-dim) |
+
+---
+
+## 📚 Documentation
+
+- [Student Guide (English)](docs/RAG_Index_Student_Guide_EN.md) — Step-by-step setup for using pre-built indexes
+- [Student Guide (中文)](docs/RAG_Index_Student_Guide.md)
+- [Lessons Learned (English)](docs/Embedding_Index_Lessons_Learned.md) — Key pitfalls and solutions
+- [踩坑總結 (中文)](docs/Embedding_Index_踩坑總結.md)
+
+---
+
+## 🛠️ Tech Stack
+
+- **Agent Framework**: [CrewAI](https://crewai.com)
+- **Vector DB**: [ChromaDB](https://www.trychroma.com/)
+- **Embeddings**: [BAAI/bge-small-en-v1.5](https://huggingface.co/BAAI/bge-small-en-v1.5) via HuggingFace
+- **LLM**: [MiniMax M2.7](https://build.nvidia.com/) via Nvidia Build API
+- **Package Manager**: [Astral uv](https://docs.astral.sh/uv/)
