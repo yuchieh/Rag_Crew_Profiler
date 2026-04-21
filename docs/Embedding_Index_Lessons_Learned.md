@@ -14,7 +14,7 @@
 
 ---
 
-## 🕳️ Five Pitfalls We Encountered
+## 🕳️ Four Pitfalls We Encountered
 
 ### Pitfall 1: `json_path` Is the Root of All Evil
 
