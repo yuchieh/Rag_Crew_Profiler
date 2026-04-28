@@ -5,10 +5,14 @@ description = "first_crew using crewAI"
 authors = [{ name = "Your Name", email = "you@example.com" }]
 requires-python = ">=3.10,<3.14"
 dependencies = [
+    "apscheduler>=3.11.2",
     "cohere>=5.20.7",
     "crewai[google-genai,tools]==1.9.3",
+    "email-validator>=2.3.0",
     "fastapi>=0.136.0",
+    "fastapi-sso>=0.21.0",
     "google-generativeai>=0.8.6",
+    "groq>=1.2.0",
     "langchain>=1.2.13",
     "langchain-community>=0.4.1",
     "litellm>=1.75.3",
@@ -16,12 +20,13 @@ dependencies = [
 ]
 
 [project.scripts]
-first_crew = "first_crew.main:run"
-run_crew = "first_crew.main:run"
-train = "first_crew.main:train"
-replay = "first_crew.main:replay"
-test = "first_crew.main:test"
-run_with_trigger = "first_crew.main:run_with_trigger"
+first_crew = "first_crew.main_sequential:run"
+first_crew_collab = "first_crew.main_collaborative:run"
+first_crew_hierarchical = "first_crew.main_hierarchical:run"
+train = "first_crew.main_sequential:train"
+replay = "first_crew.main_sequential:replay"
+test = "first_crew.main_sequential:test"
+run_with_trigger = "first_crew.main_sequential:run_with_trigger"
 
 [build-system]
 requires = ["hatchling"]

@@ -1,0 +1,11 @@
+collaborative_predict_task:
+  description: >
+    Predict the exact Star rating (1.0 to 5.0) and generate a mock review text that user {user_id} would write for business {item_id}.
+    User Analyst: Focus on finding the user's historical reviews and preferences using the search tools.
+    Restaurant Analyst: Focus on finding the business characteristics and reputation using the search tools.
+    Prediction Modeler: Work together with your teammates to synthesize the insights. Delegate to the User Analyst and Restaurant Analyst to gather all necessary data, then create the final prediction. Do not guess; rely on data.
+  expected_output: >
+    Output ONLY a valid JSON object with exactly two keys: "stars" (a float from 1.0 to 5.0) and "review" (a string).
+    Use single curly braces. Example: {{"stars": 4.5, "review": "The review text..."}}
+    Do NOT include any text before or after the JSON object. Do NOT use double curly braces.
+  agent: prediction_modeler

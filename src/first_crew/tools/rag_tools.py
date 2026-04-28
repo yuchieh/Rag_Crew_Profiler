@@ -1,30 +1,55 @@
 import os
 from dotenv import load_dotenv
+from crewai_tools import JSONSearchTool
+from crewai.knowledge.source.string_knowledge_source import StringKnowledgeSource
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
 load_dotenv()
 
 # === LLM Provider Selection ===
 llm_provider = os.getenv("LLM_PROVIDER", "ollama").lower()
 
 if llm_provider == "nvidia":
-    # Route through LiteLLM's OpenAI-compatible interface to Nvidia API
     os.environ["MODEL"] = f"openai/{os.getenv('NVIDIA_MODEL_NAME', 'meta/llama-3.1-8b-instruct')}"
     os.environ["OPENAI_API_BASE"] = os.getenv("NVIDIA_API_BASE", "https://integrate.api.nvidia.com/v1")
     os.environ["OPENAI_API_KEY"] = os.getenv("NVIDIA_API_KEY", "")
+elif llm_provider == "groq":
+    # 支援使用 Groq 呼叫與使用者提供的特製參數 openai/gpt-oss-120b
+    # 透過加上 groq/ 前綴，LiteLLM(CrewAI底層) 會直接使用標準的 Groq 路由
+    os.environ["MODEL"] = "groq/openai/gpt-oss-120b"
+    # litellm 會自動取用 os.environ["GROQ_API_KEY"]
 else:
     # Default to local Ollama Phi3
     os.environ["MODEL"] = "ollama/phi3"
-from crewai import Agent, Crew, Process, Task
-from crewai.project import CrewBase, agent, crew, task
-from crewai.agents.agent_builder.base_agent import BaseAgent
-from crewai_tools import JSONSearchTool
-from crewai.knowledge.source.string_knowledge_source import StringKnowledgeSource
-from typing import List
-import os
-
-from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # Workaround for early CrewAI-Tools versions that enforce OpenAI Key validation via Pydantic
 os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "NA")
+
+def get_default_llm():
+    """
+    提供給 Agent 指定使用，若是在 groq 模式下，會套用使用者要求的特定溫度與 tokens 參數。
+    """
+    from crewai import LLM
+    if llm_provider == "groq":
+        return LLM(
+            model="groq/openai/gpt-oss-120b",
+            temperature=1,
+            max_tokens=8192,
+            top_p=1
+            # reasoning_effort="medium" (Groq API 尚未支援此屬性，會跳錯因此隱藏)
+        )
+    elif llm_provider == "nvidia":
+        return LLM(
+            model=os.environ["MODEL"], 
+            api_key=os.environ.get("NVIDIA_API_KEY"), 
+            base_url=os.environ.get("OPENAI_API_BASE"),
+            temperature=1,
+            top_p=0.95,
+            max_tokens=8192
+        )
+    else:
+        return LLM(model=os.environ["MODEL"])
+
 
 # Embedding Model for converting text to numerical representations
 embedding_model = HuggingFaceEmbeddings(
@@ -52,8 +77,6 @@ def create_rag_tool(json_path: str, collection_name: str, config: dict, name: st
     
     if os.path.exists(db_file):
         try:
-            # Check native sqlite3 for existing collection to heavily avoid 100% JSON text synchronous chunking bottleneck
-            # and avoid ChromaDB singleton initialization conflicts with CrewAI's internal Settings
             conn = sqlite3.connect(db_file)
             cursor = conn.cursor()
             cursor.execute("SELECT id FROM collections WHERE name = ?", (collection_name,))
@@ -65,8 +88,6 @@ def create_rag_tool(json_path: str, collection_name: str, config: dict, name: st
 
     if collection_exists:
         tool = JSONSearchTool(collection_name=collection_name, config=config)
-        # CRITICAL: Force the Pydantic schema to hide json_path from the Agent, 
-        # so it doesn't trigger validation errors or pass the path and trigger the 3-hour hash loop!
         tool.args_schema = FixedJSONSearchToolSchema
     else:
         tool = JSONSearchTool(json_path=json_path, collection_name=collection_name, config=config)
@@ -115,76 +136,17 @@ review_rag_tool = create_rag_tool(
 )
 
 # === Step 2: Inject Global Background Knowledge (CrewAI Knowledge) ===
-with open('docs/Yelp Data Translation.md', 'r', encoding='utf-8') as f:
-    schema_content = f.read()
+schema_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'docs', 'Yelp Data Translation.md')
+# Handle path resolution robustly from within tools depending on where run() is invoked from
+schema_path = os.path.abspath(schema_path)
+
+if os.path.exists(schema_path):
+    with open(schema_path, 'r', encoding='utf-8') as f:
+        schema_content = f.read()
+else:
+    schema_content = "Fallback schema"
 
 schema_knowledge = StringKnowledgeSource(
     content=schema_content,
     metadata={"source": "Yelp Schema Definition"}
 )
-
-@CrewBase
-class FirstCrew():
-    """Yelp Recommendation Crew"""
-    agents: List[BaseAgent]
-    tasks: List[Task]
-
-    # === Step 6: System Assembly & Tool Binding ===
-    # Mount specific RAG Tools onto specific Agents
-    @agent
-    def user_analyst(self) -> Agent:
-        return Agent(
-            config=self.agents_config['user_analyst'], # type: ignore[index]
-            tools=[user_rag_tool, review_rag_tool],
-            verbose=True
-        )
-
-    @agent
-    def item_analyst(self) -> Agent:
-        return Agent(
-            config=self.agents_config['item_analyst'], # type: ignore[index]
-            tools=[item_rag_tool, review_rag_tool],
-            verbose=True
-        )
-
-    @agent
-    def prediction_modeler(self) -> Agent:
-        return Agent(
-            config=self.agents_config['prediction_modeler'], # type: ignore[index]
-            verbose=True
-        )
-
-    @task
-    def analyze_user_task(self) -> Task:
-        return Task(
-            config=self.tasks_config['analyze_user_task'], # type: ignore[index]
-        )
-
-    @task
-    def analyze_item_task(self) -> Task:
-        return Task(
-            config=self.tasks_config['analyze_item_task'], # type: ignore[index]
-        )
-
-    @task
-    def predict_review_task(self) -> Task:
-        return Task(
-            config=self.tasks_config['predict_review_task'], # type: ignore[index]
-            output_file='report.json'
-        )
-
-    @crew
-    def crew(self) -> Crew:
-        return Crew(
-            agents=self.agents,  # Automatically created by the @agent decorator
-            tasks=self.tasks,  # Automatically created by the @task decorator
-            process=Process.sequential,
-            knowledge_sources=[schema_knowledge],  # Bind global Knowledge
-            embedder={
-                "provider": "huggingface",
-                "config": {
-                    "model": "BAAI/bge-small-en-v1.5"
-                }
-            },
-            verbose=True
-        )

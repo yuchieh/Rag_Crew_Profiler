@@ -1,5 +1,3 @@
-# === Step 5: Strictly Separated Task Definitions ===
-
 analyze_user_task:
   description: >
     Use the search_user_profile_data tool to find information about user {user_id}.
@@ -31,6 +29,6 @@ predict_review_task:
     Consider if the restaurant's features align with the user's historical preferences.
   expected_output: >
     Output ONLY a valid JSON object with exactly two keys: "stars" (a float from 1.0 to 5.0) and "review" (a string).
-    Use single curly braces. Example: {"stars": 4.5, "review": "The review text..."}
+    Use single curly braces. Example: {{"stars": 4.5, "review": "The review text..."}}
     Do NOT include any text before or after the JSON object. Do NOT use double curly braces.
   agent: prediction_modeler

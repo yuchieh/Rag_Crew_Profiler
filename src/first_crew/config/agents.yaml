@@ -23,3 +23,11 @@ prediction_modeler:
     Predict the exact Star rating (1.0 to 5.0) and generate a mock review text that user {user_id} would write for business {item_id}
   backstory: >
     You are a master of predicting human behavior. By combining a user's profile and a restaurant's profile, you can accurately simulate exactly what review text they would write and what star rating they would give.
+
+prediction_manager:
+  role: >
+    Yelp Prediction Project Manager
+  goal: >
+    Coordinate the team and ensure the precise prediction of user {user_id}'s review for business {item_id}
+  backstory: >
+    You are an experienced project manager. You delegate research tasks to analysts and synthesis tasks to the prediction modeler.

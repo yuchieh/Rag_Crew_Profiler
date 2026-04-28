@@ -1,0 +1,5 @@
+{
+  "stars": null,
+  "review": "```json\n{\"user_id\": \"_BcWyKQL16ndpBdggh2kNA\"}\n```\n<minimax:tool_call>\n<invoke name=\"delegate_work_to_coworker\">\n<parameter name=\"task\">Research user _BcWyKQL16ndpBdggh2kNA. I need you to find and analyze all available information about this user including their historical reviews, average rating given, review patterns, preferences, and any other relevant data that would help predict their next review. Return a comprehensive summary of the user's behavior and characteristics.</parameter>\n<parameter name=\"context\">We are working on predicting user _BcWyKQL16ndpBdggh2kNA's review for business uBDXcXlLR9IuRV1N2m0SPQ. I need you to research this user's profile and history to help with this prediction.</parameter>\n<parameter name=\"coworker\">user_analyst</parameter>\n</invoke>\n</minimax:tool_call>",
+  "_parse_error": true
+}

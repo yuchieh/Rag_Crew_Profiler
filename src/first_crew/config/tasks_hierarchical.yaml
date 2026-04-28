@@ -1,0 +1,13 @@
+hierarchical_predict_task:
+  description: >
+    You MUST manage the workflow securely. Do NOT guess the answer immediately.
+    You MUST use your delegation tools to assign tasks.
+    CRITICAL: DO NOT use any XML tags (such as <minimax:tool_call>) to invoke tools. You MUST strictly follow the 'Action' and 'Action Input' format for tool invocation, or native JSON if required.
+    Step 1. Delegate a task to the user_analyst to research user {user_id}.
+    Step 2. Delegate a task to the item_analyst to research business {item_id}.
+    Step 3. After receiving their data, delegate a task to the prediction_modeler to synthesize the final prediction.
+    Step 4. Once prediction_modeler provides the JSON result, you MUST return that exact JSON result as your FINAL answer.
+  expected_output: >
+    CRITICAL: Your final answer MUST be ONLY a valid JSON object with exactly two keys: "stars" (a float from 1.0 to 5.0) and "review" (a string).
+    Do NOT include your thoughts, conversational text, or markdown code blocks (like ```json) in the final output.
+    Example of valid output: {{"stars": 4.5, "review": "The review text..."}}
